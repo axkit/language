@@ -1,10 +1,5 @@
 package language
 
-import (
-	"fmt"
-	"testing"
-
-
 /*
 func TestNewBitSet(t *testing.T) {
 
@@ -36,17 +31,17 @@ func Test_mergeTranslations(t *testing.T) {
 		{"noCustomlongSL={Key}", "noCustomlongSL={Key}"},
 		{"key=", "key="},
 		{`noCustomlongML={Key
-is probably			
+is probably
 expired }`, `noCustomlongML={Key
-is probably			
+is probably
 expired }`},
 		{"# comment", "# comment"},
 		{"customlongSL={KeyA}", "customlongSL={KeyB}"},
 		{"noCustom=Yes", "noCustom=Yes"},
 		{`customlongML={Key
-is probably			
+is probably
 expiredA }`, `customlongML={Key
-is probably			
+is probably
 expiredB }`},
 		{"withCustom=A", "withCustom=B"},
 		{`lastCustomlongML={Key
@@ -58,7 +53,7 @@ expiredB }`},
 		"withCustom=B",
 		"customlongSL={KeyB}",
 		`customlongML={Key
-is probably			
+is probably
 expiredB }`,
 		`lastCustomlongML={Key
 expiredB }`,
