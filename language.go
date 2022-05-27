@@ -4,23 +4,61 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"fmt"
+	"sync"
 )
 
-var languages []string
+var (
+	mux       sync.RWMutex
+	languages []string
+)
 
 // Index is integer representative of language short code.
 //
 type Index int
 
-// Unknown used if language code is not found.
+// Unknown value is used if language code is not found.
 const Unknown Index = -1
 
-// ToIndex returns index by language code: ru, en, sr, cz...
+const UnknownLanguageCode = "?"
+
+// Parse returns index of language code, if not found returns -1.
+func Parse(lang string) Index {
+	res := Unknown
+	mux.RLock()
+	for i := range languages {
+		if languages[i] == lang {
+			res = Index(i)
+			break
+		}
+	}
+	mux.RUnlock()
+	return res
+}
+
+// ToIndex returns index by language code: ru, en, sr, cz, created new if not found.
 func ToIndex(lang string) Index {
+	mux.RLock()
+	res := toIndex(lang, false)
+	if res != Unknown {
+		mux.RUnlock()
+		return res
+	}
+	mux.RUnlock()
+
+	mux.Lock()
+	res = toIndex(lang, true)
+	mux.Unlock()
+	return res
+}
+
+func toIndex(lang string, addUnknown bool) Index {
 	for i := range languages {
 		if languages[i] == lang {
 			return Index(i)
 		}
+	}
+	if !addUnknown {
+		return Unknown
 	}
 	languages = append(languages, lang)
 	return Index(len(languages) - 1)
@@ -28,7 +66,14 @@ func ToIndex(lang string) Index {
 
 // IndexToCode returns language code.
 func IndexToCode(index Index) string {
-	return languages[index]
+	mux.RLock()
+	if int(index) >= len(languages) {
+		mux.RUnlock()
+		return UnknownLanguageCode
+	}
+	res := languages[index]
+	mux.RUnlock()
+	return res
 }
 
 // Supported returns code of supported languages.
@@ -43,6 +88,18 @@ type NameColumn []byte
 
 // Name holds decoded names. Index of the slice calculates by ToIndex().
 type Name []string
+
+// Elem
+func (n Name) Elem(index Index) string {
+	if index < 0 {
+		return UnknownLanguageCode
+	}
+	if int(index) >= len(n) {
+		return UnknownLanguageCode
+	}
+
+	return n[index]
+}
 
 // Name decodes jsonb into array of strings
 func (rn NameColumn) Name() (Name, error) {
@@ -113,8 +170,22 @@ func ToName(b []byte) (Name, error) {
 
 	var result Name
 
+	fmt.Println(string(b))
+	fmt.Println(languages)
+
 	for lang, val := range n {
 		if idx := ToIndex(lang); idx != Unknown {
+			if int(idx) >= len(result) {
+				fmt.Println("idx:", idx, len(result), languages)
+				x := int(idx) - len(result)
+				if x < 0 {
+					x *= -1
+				}
+				x++
+				for i := 0; i < x; i++ {
+					result = append(result, "")
+				}
+			}
 			result[idx] = val
 		} else {
 			// TODO: error handling
