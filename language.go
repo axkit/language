@@ -10,6 +10,7 @@ import (
 var (
 	mux       sync.RWMutex
 	languages []string
+	NoIndex   Index = Unknown
 )
 
 // Index is integer representative of language short code.
@@ -20,6 +21,11 @@ type Index int
 const Unknown Index = -1
 
 const UnknownLanguageCode = "?"
+
+func SetNoLanguage(lang string) Index {
+	NoIndex = ToIndex(lang)
+	return NoIndex
+}
 
 // Parse returns index of language code, if not found returns -1.
 func Parse(lang string) Index {
@@ -170,13 +176,9 @@ func ToName(b []byte) (Name, error) {
 
 	var result Name
 
-	fmt.Println(string(b))
-	fmt.Println(languages)
-
 	for lang, val := range n {
 		if idx := ToIndex(lang); idx != Unknown {
 			if int(idx) >= len(result) {
-				fmt.Println("idx:", idx, len(result), languages)
 				x := int(idx) - len(result)
 				if x < 0 {
 					x *= -1
@@ -194,16 +196,23 @@ func ToName(b []byte) (Name, error) {
 	return result, nil
 }
 
-func (n *Name) MarshalJSON() ([]byte, error) {
+func (n Name) MarshalJSON() ([]byte, error) {
 
 	// TODO: переделать без использования строк и с использованием bytes.Buffer
 
-	result := ""
-	s := "{"
-	for lang, val := range *n {
-		result += s + "\"" + languages[lang] + "\":\"" + val + "\""
-		s = ","
+	if len(n) == 0 {
+		return []byte("null"), nil
 	}
+
+	result := "{"
+	s := ""
+	for idx, text := range n {
+		if text != "" {
+			result += s + "\"" + languages[idx] + "\":\"" + text + "\""
+			s = ","
+		}
+	}
+
 	result += "}"
 	return []byte(result), nil
 }
