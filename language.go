@@ -144,7 +144,7 @@ func (rn *Name) Byte() []byte {
 }
 
 // Value implements interface sql.Valuer
-func (n *Name) Value() (driver.Value, error) {
+func (n Name) Value() (driver.Value, error) {
 	return n.MarshalJSON()
 }
 
