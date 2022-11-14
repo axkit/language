@@ -1,0 +1,8 @@
+# comment
+
+Save=Save // Saves customer data
+Cancel=Cancel
+Delete=Delete
+
+# Exit declared in the en file only.
+Exit=Sign out
