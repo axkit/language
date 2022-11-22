@@ -87,8 +87,10 @@ func WithPrimaryLanguage(li Index) func(o *Option) {
 // The first suffix has the highest priority.
 func WithSuffixes(suffix ...string) func(o *Option) {
 	return func(o *Option) {
-		for i, s := range suffix {
-			o.suffixPriority[s] = i
+		for _, s := range suffix {
+			if _, ok := o.suffixPriority[s]; !ok {
+				o.suffixPriority[s] = len(o.suffixPriority) + 1
+			}
 		}
 	}
 }
@@ -109,6 +111,7 @@ func New(fn ...func(o *Option)) *Container {
 			suffixPriority:  make(map[string]int),
 		},
 	}
+	c.cfg.suffixPriority[""] = 0
 
 	for _, f := range fn {
 		f(&c.cfg)
@@ -241,6 +244,9 @@ func (c *Container) ReadRegisteredFiles() error {
 					ti.index[items[j].Key] = len(ti.items) - 1
 				}
 			}
+			// important to assign back, because ti is a copy,
+			// and ti.items can refer to another address.
+			c.translations[key] = ti
 		} else {
 			x := Set{index: make(map[string]int)}
 			x.items = items
@@ -314,7 +320,7 @@ func (c *Container) parseLine(line string) *Item {
 	val := strings.TrimSpace(line[vx+1:])
 	hx := strings.Index(val, HintSeparator)
 	if hx != -1 {
-		res.Hint = strings.TrimSpace(val[hx+1:])
+		res.Hint = strings.TrimSpace(val[hx+len(HintSeparator):])
 		res.Value = strings.TrimSpace(val[0:hx])
 	} else {
 		res.Value = val
