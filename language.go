@@ -101,7 +101,11 @@ func (n Name) Elem(index Index) string {
 		return UnknownLanguageCode
 	}
 	if int(index) >= len(n) {
-		return UnknownLanguageCode
+		if NoIndex == Unknown {
+			return UnknownLanguageCode
+		} else {
+			index = NoIndex
+		}
 	}
 
 	return n[index]
