@@ -14,7 +14,6 @@ var (
 )
 
 // Index is integer representative of language short code.
-//
 type Index int
 
 // Unknown value is used if language code is not found.
@@ -96,10 +95,45 @@ type NameColumn []byte
 type Name []string
 
 // Elem
-func (n Name) Elem(index Index) string {
+
+type ElemOption func() string
+
+func WithDefault(s string) ElemOption {
+	return func() string {
+		return s
+	}
+}
+
+func (n Name) Elem(index Index, opts ...ElemOption) string {
+
+	if len(n) == 0 && len(opts) > 0 {
+		return opts[0]()
+	}
 	if index < 0 {
 		return UnknownLanguageCode
 	}
+
+	if int(index) >= len(n) {
+		if NoIndex == Unknown {
+			return UnknownLanguageCode
+		} else {
+			index = NoIndex
+		}
+	}
+
+	return n[index]
+}
+
+func (n Name) ElemIfEmpty(index Index, returnIfEmpty string) string {
+
+	if len(n) == 0 {
+		return returnIfEmpty
+	}
+
+	if index < 0 {
+		return UnknownLanguageCode
+	}
+
 	if int(index) >= len(n) {
 		if NoIndex == Unknown {
 			return UnknownLanguageCode
